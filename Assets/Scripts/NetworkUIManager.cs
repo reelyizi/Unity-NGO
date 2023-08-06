@@ -10,9 +10,12 @@ public class NetworkUIManager : NetworkSingleton<NetworkUIManager>
     [SerializeField] private Button HostButton;
     [SerializeField] private Button ClientButton;
     [SerializeField] private Button ServerButton;
+    [SerializeField] private Button ExecutePhysicsButton;
 
     [SerializeField] TextMeshProUGUI playersInGameText;
     [SerializeField] TextMeshProUGUI playerPing;
+
+    private bool hasServerStarted;
 
     private void Start()
     {
@@ -28,6 +31,24 @@ public class NetworkUIManager : NetworkSingleton<NetworkUIManager>
         {
             NetworkManager.Singleton.StartServer();
         });
+
+        NetworkManager.Singleton.OnServerStarted += () =>
+        {
+            hasServerStarted = true;
+        };
+
+        ExecutePhysicsButton.onClick.AddListener(() =>
+        {
+            if (!hasServerStarted) return;
+
+            
+            SpawnerControl.Instance.SpawnObjects();
+        });
+
+        NetworkManager.Singleton.OnClientConnectedCallback += (id) =>
+        {
+            Logger.Instance.LogInfo($"{id} is connected");
+        };
     }
 
     private void Update()

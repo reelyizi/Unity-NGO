@@ -7,33 +7,26 @@ using UnityEngine.UIElements;
 public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float speed = 3;
-    [SerializeField] private Vector3 input;
-    private CharacterController characterController;
-    private Animator animator;
 
-    [SerializeField] private NetworkVariable<PlayerStates> networkPlayerState = new NetworkVariable<PlayerStates>();
+    private new Rigidbody rigidbody;
 
     void Start()
-    {
-        characterController = GetComponent<CharacterController>();
-        animator = GetComponent<Animator>();
+    {        
+        rigidbody = GetComponent<Rigidbody>();
     }
-
-    // Update is called once per frame
+    
     void FixedUpdate()
     {
         if (IsOwner && IsClient)
         {
             MovePlayer();
             NetworkUIManager.Instance.UpdatePing((int)NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.Singleton.LocalClientId));
-        }
-
-       
+        }       
     }
 
     private void MovePlayer()
     {
-        input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+        Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
         if (input == Vector3.zero)
         {
             UpdateClientVisualServerRpc(PlayerStates.Idle);
@@ -41,7 +34,6 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         Vector3 direction = input.normalized;
-
 
         UpdateClientPositionServerRpc(direction);
         UpdateClientRotationServerRpc(direction);
@@ -51,8 +43,10 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     public void UpdateClientPositionServerRpc(Vector3 position)
     {
-        UpdateClientVisualServerRpc(PlayerStates.Walking);        
-        characterController.Move(position * Time.fixedDeltaTime * speed);
+        UpdateClientVisualServerRpc(PlayerStates.Walking);
+        //characterController.Move(position * Time.fixedDeltaTime * speed);
+        Vector3 newPosition = rigidbody.position + position * speed * Time.fixedDeltaTime;
+        rigidbody.MovePosition(newPosition);
     }
 
     [ServerRpc]
